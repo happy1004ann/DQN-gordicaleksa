@@ -1,3 +1,8 @@
+import os
+import sys
+
+sys.path.append(os.getcwd())
+
 from torch import nn
 import torch
 import numpy as np

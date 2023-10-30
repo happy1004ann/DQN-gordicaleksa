@@ -29,7 +29,8 @@ if __name__ == '__main__':
     os.makedirs(game_frames_dump_dir, exist_ok=True)
 
     # Step 1: Prepare environment, replay buffer and schedule
-    env = utils.get_env_wrapper(env_id, record_video=should_record_video)
+    env = utils.get_env_wrapper(env_id)
+    env.metadata['render_fps'] = 60
     replay_buffer = ReplayBuffer(buffer_size)
     const_schedule = utils.ConstSchedule(epsilon_eval)  # lambda would also do - doing it like this for consistency
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
 
     # Step 3: Evaluate the agent on a single episode
     print(f'{"*"*10} Starting the game. {"*"*10}')
-    last_frame = env.reset()
+    last_frame = env.reset()[0]
 
     score = 0
     cnt = 0
@@ -58,19 +59,20 @@ if __name__ == '__main__':
         with torch.no_grad():
             action = dqn.epsilon_greedy(current_state)  # act in this state
 
-        new_frame, reward, done, _ = env.step(action)  # send the action to the environment
+        new_frame, reward, terminated, truncated, _ = env.step(action)  # send the action to the environment
         score += reward
 
         env.render()  # plot the current game frame
-        screen = env.render(mode='rgb_array')  # but also save it as an image
+        screen = env.render()  # but also save it as an image
         processed_screen = cv.resize(screen[:, :, ::-1], (0, 0), fx=1.5, fy=1.5, interpolation=cv.INTER_NEAREST)
         cv.imwrite(os.path.join(game_frames_dump_dir, f'{str(cnt).zfill(5)}.jpg'), processed_screen)  # cv expects BGR hence ::-1
         cnt += 1
 
+        done = terminated or truncated
         if done:
             print(f'Episode over, score = {score}.')
             break
 
-        last_frame = new_frame  # set the last frame to the newly acquired frame from the env
+        last_frame = new_frame[0]  # set the last frame to the newly acquired frame from the env
 
     create_gif(game_frames_dump_dir, os.path.join(DATA_DIR_PATH, f'{env_id}.gif'), fps=60)

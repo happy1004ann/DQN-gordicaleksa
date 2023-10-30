@@ -5,10 +5,10 @@ import re
 
 import torch
 import git
-import gym
+import gymnasium as gym
 import numpy as np
 from stable_baselines3.common.atari_wrappers import AtariWrapper
-from gym.wrappers import Monitor
+from stable_baselines3.common.monitor import Monitor
 
 
 from .constants import *
@@ -30,7 +30,7 @@ def get_env_wrapper(env_id, record_video=False):
 
     # The only additional thing needed, on top of AtariWrapper,
     # is to convert the shape to channel-first because of PyTorch's models
-    env_wrapped = Monitor(ChannelFirst(AtariWrapper(gym.make(env_id))), monitor_dump_dir, force=True, video_callable=lambda episode: record_video)
+    env_wrapped = Monitor(ChannelFirst(AtariWrapper(gym.make(env_id, render_mode='rgb_array'))))
 
     return env_wrapped
 

@@ -78,15 +78,16 @@ class ActorLearner:
             state = self.replay_buffer.fetch_last_state()  # state = 4 preprocessed last frames for Atari
 
             action = self.sample_action(state)
-            new_frame, reward, done_flag, _ = self.env.step(action)
+            new_frame, reward, terminated, truncated, _ = self.env.step(action)
 
+            done_flag = terminated or truncated
             self.replay_buffer.store_action_reward_done(last_index, action, reward, done_flag)
 
             if done_flag:
                 new_frame = self.env.reset()
                 self.maybe_log_episode()
 
-            self.last_frame = new_frame
+            self.last_frame = new_frame[0]
 
             if self.debug:
                 self.visualize_state(state)
@@ -214,7 +215,7 @@ def train_dqn(config):
 
     # Don't get confused by the actor-learner terminology, DQN is not an actor-critic method, but conceptually
     # we can split the learning process into collecting experience/acting in the env and learning from that experience
-    actor_learner = ActorLearner(config, env, replay_buffer, dqn, target_dqn, env.reset())
+    actor_learner = ActorLearner(config, env, replay_buffer, dqn, target_dqn, env.reset()[0])
 
     while actor_learner.get_number_of_env_steps() < config['num_of_training_steps']:
 
